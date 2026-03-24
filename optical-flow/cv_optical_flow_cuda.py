@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2026 Mischa Schaefer <https://github.com/mischa-robots/vision-demo>
+# Copyright (c) 2026 Michael Schaefer <https://github.com/mischa-robots/vision-demo>
 
 """
 cv_optical_flow_cuda.py
@@ -35,12 +35,6 @@ Watch the stream at:
 Usage:
   python3 cv_optical_flow_cuda.py
   python3 cv_optical_flow_cuda.py --help
-
-
-MIT License
-
-Copyright (c) 2026 Mischa (Michael Schaefer)
-https://github.com/mischa-robots/vision-demo
 """
 
 import argparse

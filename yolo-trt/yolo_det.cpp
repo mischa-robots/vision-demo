@@ -1,24 +1,24 @@
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Mischa Schaefer <https://github.com/mischa-robots/vision-demo>
+// Copyright (c) 2026 Michael Schaefer <https://github.com/mischa-robots/vision-demo>
 
 /**
- * yolo_seg.cpp
+ * yolo_det.cpp
  * ─────────────
- * YOLO instance segmentation on Jetson Nano — streams result to browser via MediaMTX.
+ * YOLO object detection on Jetson Nano — streams result to browser via MediaMTX.
  *
  * Three-stage pipeline running in separate threads:
  *   Thread 1 (capture)  — CSI camera → resize + normalise → frame queue
- *   Thread 2 (infer)    — TensorRT inference + NMS + mask decode → result queue
- *   Thread 3 (encode)   — draw masks + contours → H.264 encoder → RTP → MediaMTX
+ *   Thread 2 (infer)    — TensorRT inference + NMS → result queue
+ *   Thread 3 (encode)   — draw boxes → H.264 encoder → RTP → MediaMTX
  *
  * Watch the stream at:
- *   WebRTC (lowest latency) : http://<jetson-ip>:8889/yolo_seg
- *   HLS   (most compatible) : http://<jetson-ip>:8888/yolo_seg
- *   RTSP  (VLC / ffplay)    : rtsp://<jetson-ip>:8554/yolo_seg
+ *   WebRTC (lowest latency) : http://<jetson-ip>:8889/yolo
+ *   HLS   (most compatible) : http://<jetson-ip>:8888/yolo
+ *   RTSP  (VLC / ffplay)    : rtsp://<jetson-ip>:8554/yolo
  *
  * Usage:
- *   ./build/yolo_seg --model ./yolo/models/yolo-seg.trt --labels ./yolo/models/yolo-seg-labels.txt
- *   ./build/yolo_seg --help
+ *   ./build/yolotrt_det --model ./yolo-trt/models/yolo.trt --labels ./yolo-trt/models/yolo-labels.txt
+ *   ./build/yolotrt_det --help
  */
 
 #include <atomic>
@@ -38,8 +38,8 @@
 #include <opencv2/cudaimgproc.hpp>
 #include <opencv2/cudawarping.hpp>
 
-#include "yolo_seg_trt_engine.hpp"
-#include "yolo_seg_postprocess.hpp"
+#include "yolo_trt_engine.hpp"
+#include "yolo_postprocess.hpp"
 
 // ════════════════════════════════════════════════════════════════════════════
 // Thread-safe fixed-capacity queue
@@ -52,11 +52,12 @@ public:
 
     void push(T item) {
         std::unique_lock<std::mutex> lock(_mu);
-        if (_q.size() >= _cap) _q.pop();
+        if (_q.size() >= _cap) _q.pop();   // drop oldest if full
         _q.push(std::move(item));
         _cv.notify_one();
     }
 
+    // Returns false on timeout or stop — caller should check g_stop
     bool pop(T& item, int timeout_ms = 200) {
         std::unique_lock<std::mutex> lock(_mu);
         if (!_cv.wait_for(lock, std::chrono::milliseconds(timeout_ms),
@@ -81,46 +82,49 @@ private:
 // ════════════════════════════════════════════════════════════════════════════
 // Data passed between threads
 // ════════════════════════════════════════════════════════════════════════════
+
+// Capture → Infer
 struct CaptureFrame {
-    cv::Mat            bgr;
+    cv::Mat            bgr;           // original frame for drawing
     std::vector<float> input;         // preprocessed NCHW float32
-    int64_t            timestamp_us;
+    int64_t            timestamp_us;  // capture time (for latency logging)
 };
 
+// Infer → Encode
 struct InferResult {
-    cv::Mat                   bgr;
-    std::vector<SegDetection> detections;
-    int64_t                   timestamp_us;
+    cv::Mat                 bgr;
+    std::vector<Detection>  detections;
+    int64_t                 timestamp_us;
 };
 
 // ════════════════════════════════════════════════════════════════════════════
-// Config
+// Config — all runtime parameters in one place
 // ════════════════════════════════════════════════════════════════════════════
 struct Config {
-    std::string model_path    = "./yolo/models/yolo-seg.trt";
-    std::string labels_path   = "./yolo/models/yolo-seg-labels.txt";
+    std::string model_path    = "./yolo-trt/models/yolo.trt";
+    std::string labels_path   = "./yolo-trt/models/yolo-labels.txt";
     int         width         = 1280;
     int         height        = 720;
     int         fps           = 30;
     int         sensor_id     = 0;
-    int         flip          = 0;
+    int         flip          = 0;       // nvvidconv flip-method (0=none, 2=180°)
     float       conf          = 0.25f;
     float       iou           = 0.45f;
-    float       mask_thresh   = 0.5f;
-    float       mask_alpha    = 0.4f;  // overlay opacity (0=transparent 1=solid)
     std::string udp_host      = "127.0.0.1";
-    int         udp_port      = 5603;  // mediamtx_demo.yml: yolo_seg path
-    std::string stream_name   = "yolo_seg";
+    int         udp_port      = 5602;    // mediamtx_demo.yml yolo path
+    std::string stream_name   = "yolo";
     int         bitrate       = 4000000;
     int         iframeinterval = 30;
-    int         h264_profile  = 2;     // 0=Baseline 2=Main 4=High (use 0 or 2 for WebRTC)
+    int         h264_profile  = 2;       // 0=Baseline 2=Main 4=High (use 0 or 2 for WebRTC)
     int         warmup_runs   = 5;
-    int         queue_size    = 2;
+    int         queue_size    = 2;       // small queue = low latency
 };
 
 // ════════════════════════════════════════════════════════════════════════════
 // GStreamer pipeline strings
 // ════════════════════════════════════════════════════════════════════════════
+
+// CSI camera → BGR frames via Argus/nvarguscamerasrc
 static std::string gst_capture(const Config& c) {
     std::ostringstream s;
     s << "nvarguscamerasrc sensor-id=" << c.sensor_id << " ! "
@@ -135,6 +139,7 @@ static std::string gst_capture(const Config& c) {
     return s.str();
 }
 
+// BGR frames → H.264 → RTP → udpsink (MediaMTX ingests on rtp_port)
 static std::string gst_encode(const Config& c) {
     std::ostringstream s;
     s << "appsrc ! "
@@ -159,6 +164,8 @@ static std::string gst_encode(const Config& c) {
 
 // ════════════════════════════════════════════════════════════════════════════
 // Preprocess — resize + normalise frame for TRT input
+// GPU handles resize and BGR→RGB; normalisation stays on CPU
+// (convertTo CUDA binding is broken on this aarch64 build)
 // ════════════════════════════════════════════════════════════════════════════
 static void preprocess(const cv::Mat& frame_bgr,
                        std::vector<float>& out,
@@ -166,7 +173,7 @@ static void preprocess(const cv::Mat& frame_bgr,
                        cv::cuda::GpuMat& gpu_resized,
                        cv::cuda::GpuMat& gpu_rgb)
 {
-    constexpr int SIZE = TRTSegEngine::INPUT_H;
+    constexpr int SIZE = TRTEngine::INPUT_H;  // 640
 
     gpu_src.upload(frame_bgr);
     cv::cuda::resize(gpu_src, gpu_resized, {SIZE, SIZE});
@@ -175,13 +182,15 @@ static void preprocess(const cv::Mat& frame_bgr,
     cv::Mat cpu_rgb;
     gpu_rgb.download(cpu_rgb);
 
+    // Convert uint8 → float32, scale 0..255 → 0..1
     cv::Mat cpu_float;
     cpu_rgb.convertTo(cpu_float, CV_32FC3, 1.0 / 255.0);
 
+    // HWC → CHW layout required by TRT (split channels into flat array)
     std::vector<cv::Mat> channels(3);
     cv::split(cpu_float, channels);
 
-    out.resize(TRTSegEngine::INPUT_SIZE);
+    out.resize(TRTEngine::INPUT_SIZE);
     const int plane = SIZE * SIZE;
     for (int c = 0; c < 3; ++c)
         std::memcpy(out.data() + c * plane,
@@ -209,6 +218,7 @@ static void capture_thread(const Config& cfg, FrameQueue<CaptureFrame>& queue)
     std::cout << "[CAPTURE] Camera opened ("
               << cfg.width << "x" << cfg.height << " @ " << cfg.fps << "fps)\n";
 
+    // Pre-allocate GPU mats — reused every frame to avoid alloc overhead
     cv::cuda::GpuMat gpu_src, gpu_resized, gpu_rgb;
     cv::Mat frame;
 
@@ -233,26 +243,25 @@ static void capture_thread(const Config& cfg, FrameQueue<CaptureFrame>& queue)
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// Thread 2 — TRT Inference + NMS + Mask Decode
+// Thread 2 — TRT Inference + NMS
 // ════════════════════════════════════════════════════════════════════════════
 static void infer_thread(const Config& cfg,
-                         TRTSegEngine& engine,
+                         TRTEngine& engine,
                          const std::vector<std::string>& labels,
                          FrameQueue<CaptureFrame>& in_queue,
                          FrameQueue<InferResult>&  out_queue)
 {
-    std::vector<float> out0(TRTSegEngine::OUT0_SIZE);
-    std::vector<float> out1(TRTSegEngine::OUT1_SIZE);
+    std::vector<float> output(TRTEngine::OUTPUT_SIZE);
 
     while (!g_stop) {
         CaptureFrame cf;
         if (!in_queue.pop(cf)) continue;
 
-        engine.infer(cf.input.data(), out0.data(), out1.data());
+        engine.infer(cf.input.data(), output.data());
 
-        auto dets = seg_postprocess(out0.data(), out1.data(),
-                                    cfg.width, cfg.height,
-                                    labels, cfg.conf, cfg.iou, cfg.mask_thresh);
+        auto dets = postprocess(output.data(),
+                                cfg.width, cfg.height,
+                                labels, cfg.conf, cfg.iou);
 
         InferResult ir;
         ir.bgr          = std::move(cf.bgr);
@@ -287,6 +296,7 @@ static void encode_thread(const Config& cfg, FrameQueue<InferResult>& queue)
         InferResult ir;
         if (!queue.pop(ir)) continue;
 
+        // Update FPS and log stats once per second
         fps_count++;
         auto now = std::chrono::steady_clock::now();
         double elapsed = std::chrono::duration<double>(now - t_fps).count();
@@ -306,7 +316,7 @@ static void encode_thread(const Config& cfg, FrameQueue<InferResult>& queue)
                       << latency_ms    << "ms\n";
         }
 
-        drawSegDetections(ir.bgr, ir.detections, fps_display, cfg.mask_alpha);
+        drawDetections(ir.bgr, ir.detections, fps_display);
         writer.write(ir.bgr);
     }
 
@@ -340,8 +350,6 @@ static Config parse_args(int argc, char** argv)
         else if (arg == "--flip")          cfg.flip          = std::stoi(next());
         else if (arg == "--conf")          cfg.conf          = std::stof(next());
         else if (arg == "--iou")           cfg.iou           = std::stof(next());
-        else if (arg == "--mask-thresh")   cfg.mask_thresh   = std::stof(next());
-        else if (arg == "--mask-alpha")    cfg.mask_alpha    = std::stof(next());
         else if (arg == "--udp-host")      cfg.udp_host      = next();
         else if (arg == "--udp-port")      cfg.udp_port      = std::stoi(next());
         else if (arg == "--stream-name")   cfg.stream_name   = next();
@@ -351,10 +359,10 @@ static Config parse_args(int argc, char** argv)
         else if (arg == "--warmup")        cfg.warmup_runs   = std::stoi(next());
         else if (arg == "--help") {
             std::cout <<
-                "Usage: ./build/yolo_seg [options]\n"
+                "Usage: ./build/yolo_det [options]\n"
                 "\n"
-                "  --model          PATH   TRT engine file       (default: ./yolo/models/yolo-seg.trt)\n"
-                "  --labels         PATH   Labels file           (default: ./yolo/models/yolo-seg-labels.txt)\n"
+                "  --model          PATH   TRT engine file       (default: ./yolo-trt/models/yolo.trt)\n"
+                "  --labels         PATH   Labels file           (default: ./yolo-trt/models/yolo-labels.txt)\n"
                 "  --width          INT    Camera width          (default: 1280)\n"
                 "  --height         INT    Camera height         (default: 720)\n"
                 "  --fps            INT    Camera FPS            (default: 30)\n"
@@ -362,11 +370,9 @@ static Config parse_args(int argc, char** argv)
                 "  --flip           INT    nvvidconv flip        (default: 0)\n"
                 "  --conf           FLOAT  Confidence threshold  (default: 0.25)\n"
                 "  --iou            FLOAT  NMS IoU threshold     (default: 0.45)\n"
-                "  --mask-thresh    FLOAT  Mask binary threshold (default: 0.5)\n"
-                "  --mask-alpha     FLOAT  Overlay opacity       (default: 0.4)\n"
                 "  --udp-host       STR    MediaMTX UDP host     (default: 127.0.0.1)\n"
-                "  --udp-port       INT    MediaMTX UDP port     (default: 5603)\n"
-                "  --stream-name    STR    Stream name (banner)  (default: yolo_seg)\n"
+                "  --udp-port       INT    MediaMTX UDP port     (default: 5602)\n"
+                "  --stream-name    STR    Stream name (banner)  (default: yolo)\n"
                 "  --bitrate        INT    Encoder bps           (default: 4000000)\n"
                 "  --iframeinterval INT    Keyframe interval     (default: 30)\n"
                 "  --h264-profile   INT    H.264 profile         (default: 2=Main)\n"
@@ -393,25 +399,25 @@ int main(int argc, char** argv)
 
     Config cfg = parse_args(argc, argv);
 
+    // Load labels from file (defaults to COCO if not overridden)
     std::vector<std::string> labels = load_labels(cfg.labels_path);
 
     std::cout << "==================================================\n"
-              << "  yolo_seg -- YOLO Segmentation\n"
+              << "  yolotrt_det -- YOLO TRT Detection\n"
               << "==================================================\n"
-              << "  Model      : " << cfg.model_path  << "\n"
-              << "  Labels     : " << cfg.labels_path
-              <<               " (" << labels.size() << " classes)\n"
-              << "  Camera     : " << cfg.width << "x" << cfg.height
-              <<               " @ " << cfg.fps << "fps  sensor=" << cfg.sensor_id << "\n"
-              << "  Conf       : " << cfg.conf         << "\n"
-              << "  Mask thr   : " << cfg.mask_thresh  << "\n"
-              << "  Mask alpha : " << cfg.mask_alpha   << "\n"
-              << "  Bitrate    : " << cfg.bitrate      << " bps\n"
-              << "  UDP ->     : " << cfg.udp_host << ":" << cfg.udp_port << "\n"
-              << "  Stream     : http://<host>:8889/" << cfg.stream_name << "\n"
+              << "  Model    : " << cfg.model_path  << "\n"
+              << "  Labels   : " << cfg.labels_path
+              <<             " (" << labels.size() << " classes)\n"
+              << "  Camera   : " << cfg.width << "x" << cfg.height
+              <<             " @ " << cfg.fps << "fps  sensor=" << cfg.sensor_id << "\n"
+              << "  Conf     : " << cfg.conf          << "\n"
+              << "  IoU      : " << cfg.iou           << "\n"
+              << "  Bitrate  : " << cfg.bitrate       << " bps\n"
+              << "  UDP ->   : " << cfg.udp_host << ":" << cfg.udp_port << "\n"
+              << "  Stream   : http://<host>:8889/" << cfg.stream_name << "\n"
               << "==================================================\n";
 
-    TRTSegEngine engine(cfg.model_path);
+    TRTEngine engine(cfg.model_path);
     engine.warmup(cfg.warmup_runs);
 
     FrameQueue<CaptureFrame> capture_queue(cfg.queue_size);

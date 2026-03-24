@@ -353,11 +353,11 @@ robot pipeline the relevant outputs are:
   the `Q` matrix from stereo calibration. Feeds SLAM or occupancy grid mapping.
 
 For optical flow and ego-motion estimation see `optical-flow/`.
-For object detection and segmentation see `yolo/`.
+For object detection and segmentation see `yolo-trt/`.
 
 
 ## License
 
 MIT
 
-Copyright (c) 2026 Mischa Schaefer <https://github.com/mischa-robots/vision-demo>
+Copyright (c) 2026 Michael Schaefer <https://github.com/mischa-robots/vision-demo>

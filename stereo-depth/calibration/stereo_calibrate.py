@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2026 Mischa Schaefer <https://github.com/mischa-robots/vision-demo>
+# Copyright (c) 2026 Michael Schaefer <https://github.com/mischa-robots/vision-demo>
 
 """
 stereo_calibrate.py — Robust stereo calibration for Jetson Nano dual-camera rig.

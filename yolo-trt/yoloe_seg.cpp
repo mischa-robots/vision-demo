@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Mischa Schaefer <https://github.com/mischa-robots/vision-demo>
+// Copyright (c) 2026 Michael Schaefer <https://github.com/mischa-robots/vision-demo>
 
 /**
  * yoloe_seg.cpp
@@ -20,13 +20,13 @@
  *   Option C — zero-copy TRT output: pinned buffers written directly by TRT
  *
  * Watch the stream at:
- *   WebRTC (lowest latency) : http://<jetson-ip>:8889/yoloe_seg
- *   HLS   (most compatible) : http://<jetson-ip>:8888/yoloe_seg
- *   RTSP  (VLC / ffplay)    : rtsp://<jetson-ip>:8554/yoloe_seg
+ *   WebRTC (lowest latency) : http://<jetson-ip>:8889/yolo
+ *   HLS   (most compatible) : http://<jetson-ip>:8888/yolo
+ *   RTSP  (VLC / ffplay)    : rtsp://<jetson-ip>:8554/yolo
  *
  * Usage:
- *   ./build/yoloe_seg --model ./yolo/models/yoloe-seg.trt --labels ./yolo/models/yoloe-seg-labels.txt
- *   ./build/yoloe_seg --help
+ *   ./build/yoloetrt_seg --model ./yolo-trt/models/yoloe-seg.trt --labels ./yolo-trt/models/yoloe-seg-labels.txt
+ *   ./build/yoloetrt_seg --help
  *
  * MIT License
  * Copyright (c) 2026 Mischa (Michael Schaefer)
@@ -113,8 +113,8 @@ struct InferResult {
 // Config
 // ════════════════════════════════════════════════════════════════════════════
 struct Config {
-    std::string model_path    = "./yolo/models/yoloe-seg.trt";
-    std::string labels_path   = "./yolo/models/yoloe-seg-labels.txt";
+    std::string model_path    = "./yolo-trt/models/yoloe-seg.trt";
+    std::string labels_path   = "./yolo-trt/models/yoloe-seg-labels.txt";
     int         width         = 1280;
     int         height        = 720;
     int         fps           = 30;
@@ -125,8 +125,8 @@ struct Config {
     float       mask_thresh   = 0.5f;
     float       mask_alpha    = 0.4f;
     std::string udp_host      = "127.0.0.1";
-    int         udp_port      = 5604;  // mediamtx_demo.yml: yoloe_seg path
-    std::string stream_name   = "yoloe_seg";
+    int         udp_port      = 5602;  // mediamtx_demo.yml yolo path
+    std::string stream_name   = "yolo";
     int         bitrate       = 4000000;
     int         iframeinterval = 30;
     int         h264_profile  = 2;     // 0=Baseline 2=Main 4=High (use 0 or 2 for WebRTC)
@@ -379,9 +379,9 @@ static Config parse_args(int argc, char** argv)
         else if (arg == "--warmup")        cfg.warmup_runs   = std::stoi(next());
         else if (arg == "--help") {
             std::cout <<
-                "Usage: ./build/yoloe_seg [options]\n"
+                "Usage: ./build/yoloetrt_seg [options]\n"
                 "\n"
-                "  --model        PATH   TRT engine file     (default: ./yolo/models/yoloe-seg.trt)\n"
+                "  --model        PATH   TRT engine file     (default: ./yolo-trt/models/yoloe-seg.trt)\n"
                 "  --labels       PATH   Labels file         (required — one class per line)\n"
                 "  --width        INT    Camera width        (default: 1280)\n"
                 "  --height       INT    Camera height       (default: 720)\n"
@@ -408,8 +408,8 @@ static Config parse_args(int argc, char** argv)
 
     // --labels is required for YOLOE (no fixed class list)
     if (cfg.labels_path.empty()) {
-        std::cerr << "[ERROR] --labels <file> is required for yoloe_seg.\n"
-                  << "        Example: --labels ./yolo/models/yoloe-seg-labels.txt\n";
+        std::cerr << "[ERROR] --labels <file> is required for yoloetrt_seg.\n"
+                  << "        Example: --labels ./yolo-trt/models/yoloe-seg-labels.txt\n";
         std::exit(1);
     }
 
@@ -439,7 +439,7 @@ int main(int argc, char** argv)
     const int num_classes = static_cast<int>(labels.size());
 
     std::cout << "==================================================\n"
-              << "  yoloe_seg -- YOLOE Segmentation\n"
+              << "  yoloetrt_seg -- YOLOE TRT Segmentation\n"
               << "==================================================\n"
               << "  Model      : " << cfg.model_path  << "\n"
               << "  Labels     : " << cfg.labels_path

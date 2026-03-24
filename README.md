@@ -51,18 +51,19 @@ algorithms without changing the browser URL.
 
 Stream: `http://<jetson-ip>:8889/optical_flow`
 
-### YOLO
+### YOLO TRT
 
-Single CSI or USB camera → TensorRT inference → detection/segmentation overlay
-→ streamed to browser.
+Single CSI or USB camera → TensorRT inference → detection/segmentation overlay → streamed to browser.
 
 | Binary | Description |
 |---|---|
-| `yolo_det` | Real-time object detection with any YOLO TensorRT engine |
-| `yolo_seg` | Instance segmentation with YOLO-seg TensorRT engine |
-| `yoloe_seg` | Instance segmentation with YOLOE-seg TensorRT engine |
+| `yolotrt_det` | Real-time object detection with any YOLO TensorRT engine |
+| `yolotrt_seg` | Instance segmentation with YOLO-seg TensorRT engine |
+| `yoloetrt_seg` | Instance segmentation with YOLOE-seg TensorRT engine |
 
-Streams: `http://<jetson-ip>:8889/yolo_det` etc.
+All Streams: `http://<jetson-ip>:8889/yolo`
+
+It is expected to run only one demo program at a time, thus all programs stream to the same path to keep it simple.
 
 ---
 
@@ -139,23 +140,23 @@ make rebuild
 
 ### 5. Run a demo
 
-**Stereo depth (recommended):**
+**Stereo depth (example):**
 ```bash
-./build/vpi_stereo_depth \
-  --calib ./stereo-depth/stereo_calibration.yaml
+./build/vpi_stereo_depth --calib ./stereo-depth/stereo_calibration.yaml
 ```
 
-**Optical flow (recommended):**
+**Optical flow (example):**
 ```bash
 ./build/cvcuda_sparse_pyrlk
 ```
 
-**YOLO detection:**
+**YOLO TRT detection (example):**
 ```bash
-./build/yolo_det \
-  --model ./yolo/models/yolo.trt \
-  --labels ./yolo/labels.txt
+./build/yolotrt_det --model ./yolo-trt/models/yolo.trt --labels ./yolo-trt/models/yolo-labels.txt
 ```
+
+*Note:* YOLO models are not saved in this repo, they must be downloaded and exported.
+More Infos on that in the [YOLO README](yolo-trt/README.md)
 
 Run any binary with `--help` to see all available options.
 
@@ -164,36 +165,38 @@ Run any binary with `--help` to see all available options.
 ```
 http://<jetson-ip>:8889/stereo_depth
 http://<jetson-ip>:8889/optical_flow
-http://<jetson-ip>:8889/yolo_det
-http://<jetson-ip>:8889/yolo_seg
-http://<jetson-ip>:8889/yoloe_seg
+http://<jetson-ip>:8889/yolo
 ```
 
 All streams are served simultaneously by the same MediaMTX instance — no
-restart needed when switching between demos that share a stream path.
+restart needed when switching between demos.
 
 ---
 
-## Architecture
+## Streaming Architecture
 
 ```
 CSI cameras
   │
-  ├─► stereo-depth/ ──────────────────────────┐
+  ├─► stereo-depth/ ───────────────────────────┐
   │     rectification → disparity → colourmap  │
   │     vpi_stereo_depth, cvcuda_stereo_*      │
   │                                            │
-  ├─► optical-flow/ ──────────────────────────┤
+  ├─► optical-flow/ ───────────────────────────┤
   │     corner detection → LK / dense flow     │
   │     cvcuda_sparse_pyrlk, cvcuda_farneback  │
   │     cvcuda_dense_pyrlk, cvcuda_brox        │
   │     cvcuda_dual_tvl1, vpi_optical_flow     │
   │                                            │
-  ├─► yolo/ ──────────────────────────────────┤
+  ├─► yolo-trt/ ───────────────────────────────┤
   │     TensorRT inference → overlay           │
-  │     yolo_det, yolo_seg, yoloe_seg          │
-  │                                            ▼
-  └────────────────────────────────────── MediaMTX
+  │     yolotrt_det, yolotrt_seg, yoloetrt_seg │
+  │                                            │
+  ├────────────────────────────────────────────┤
+                                               │
+                                            RTP/UDP
+                                               ▼
+                                            MediaMTX
                                                │
                                  ┌─────────────┴─────────────┐
                                  ▼                           ▼
@@ -204,8 +207,7 @@ CSI cameras
                           Any browser on the same network
 ```
 
-Each binary pushes H.264 over RTP/UDP into MediaMTX. MediaMTX re-serves all
-streams as WebRTC and HLS simultaneously.
+Each binary pushes H.264 over RTP/UDP into MediaMTX. MediaMTX re-serves all streams as WebRTC (and optionally as HLS or RTSP) simultaneously.
 
 ---
 
@@ -229,26 +231,27 @@ vision-demo/
 │   └── README.md
 │
 ├── optical-flow/                   # Optical flow demos
-│   ├── cvcuda_sparse_pyrlk_optical_flow.cpp   # Recommended
+│   ├── cvcuda_sparse_pyrlk_optical_flow.cpp
 │   ├── cvcuda_farneback_optical_flow.cpp
 │   ├── cvcuda_dense_pyrlk_optical_flow.cpp
 │   ├── cvcuda_brox_optical_flow.cpp
 │   ├── cvcuda_dual_tvl1_optical_flow.cpp
-│   ├── vpi_optical_flow.cpp                   # ⚠️ VPI bug — demo only
+│   ├── vpi_optical_flow.cpp        # ⚠️ VPI bug — demo only
 │   ├── cv_optical_flow.py
 │   ├── cv_optical_flow_cuda.py
 │   └── README.md
 │
-├── yolo/                           # YOLO detection + segmentation
-│   ├── yolo_det.cpp
-│   ├── yolo_seg.cpp
-│   ├── yoloe_seg.cpp
-│   ├── trt_infer.cpp
+├── yolo-trt/                       # YOLO detection + segmentation with TensorRT models
+│   ├── yolo_det.cpp                # binary: yolotrt_det
+│   ├── yolo_seg.cpp                # binary: yolotrt_seg
+│   ├── yoloe_seg.cpp               # binary: yoloetrt_seg
+│   ├── ...                         # engine and postprocess (rendering) libs for the yolo binaries
+│   ├── trt_infer.cpp               # binary: trt_infer.so
 │   ├── models/                     # TensorRT engines — not committed
 │   └── README.md
 │
 ├── mediamtx/                       # MediaMTX config + binary
-│   ├── mediamtx_demo.yml           # Stream path configuration
+│   ├── mediamtx_demo.yml           # Stream path configuration for all demos
 │   └── README.md
 │
 └── build/                          # Compiled binaries — not committed
@@ -273,4 +276,4 @@ vision-demo/
 
 MIT
 
-Copyright (c) 2026 Mischa Schaefer <https://github.com/mischa-robots/vision-demo>
+Copyright (c) 2026  Michael Schaefer <https://github.com/mischa-robots/vision-demo>

@@ -32,18 +32,16 @@ Start MediaMTX before running any demo binary. It listens for incoming streams a
 
 ## Streams
 
-Each demo pushes to a dedicated UDP port. MediaMTX exposes all of them simultaneously:
+Each demo pushes to a dedicated UDP port when running. MediaMTX exposes all of them simultaneously:
 
 | Demo | WebRTC | HLS | RTSP |
 |------|--------|-----|------|
 | Stereo Depth | `http://<jetson-ip>:8889/stereo_depth` | `http://<jetson-ip>:8888/stereo_depth` | `rtsp://<jetson-ip>:8554/stereo_depth` |
 | Optical Flow | `http://<jetson-ip>:8889/optical_flow` | `http://<jetson-ip>:8888/optical_flow` | `rtsp://<jetson-ip>:8554/optical_flow` |
-| YOLO Detection | `http://<jetson-ip>:8889/yolo_det` | `http://<jetson-ip>:8888/yolo_det` | `rtsp://<jetson-ip>:8554/yolo_det` |
-| YOLO Segmentation | `http://<jetson-ip>:8889/yolo_seg` | `http://<jetson-ip>:8888/yolo_seg` | `rtsp://<jetson-ip>:8554/yolo_seg` |
-| YOLOE Segmentation | `http://<jetson-ip>:8889/yoloe_seg` | `http://<jetson-ip>:8888/yoloe_seg` | `rtsp://<jetson-ip>:8554/yoloe_seg` |
+| YOLO Detection | `http://<jetson-ip>:8889/yolo` | `http://<jetson-ip>:8888/yolo` | `rtsp://<jetson-ip>:8554/yolo` |
 
 **WebRTC** gives the lowest latency and works directly in Chrome and Firefox — recommended for live demos.
-**HLS** is the most compatible fallback for other browsers and devices. It's deactivated by default, to activate set `hls: true`
+**HLS** is the most compatible fallback for other browsers and devices but has a streaming delay. It's deactivated by default, to activate set `hls: true`
 **RTSP** is for VLC, ffplay, gstreamer or other video tools. It's deactivated by default, to activate set `rtsp: true`
 
 ---
@@ -75,4 +73,4 @@ mediamtx/
 
 MIT
 
-Copyright (c) 2026 Mischa Schaefer <https://github.com/mischa-robots/vision-demo>
+Copyright (c) 2026 Michael Schaefer <https://github.com/mischa-robots/vision-demo>

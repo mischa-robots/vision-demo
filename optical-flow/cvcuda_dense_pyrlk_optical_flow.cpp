@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Mischa Schaefer <https://github.com/mischa-robots/vision-demo>
+// Copyright (c) 2026 Michael Schaefer <https://github.com/mischa-robots/vision-demo>
 
 /**
  * cvcuda_dense_pyrlk_optical_flow.cpp

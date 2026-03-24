@@ -97,7 +97,7 @@ set(VPI_LINK_LIBS
 # trt_infer.so  — shared library loaded by Python scripts via ctypes
 # ═════════════════════════════════════════════════════════════════════════════
 add_library(trt_infer SHARED
-    yolo/trt_infer.cpp
+    yolo-trt/trt_infer.cpp
 )
 target_include_directories(trt_infer PRIVATE
     ${TRT_INCLUDE_DIR} ${CUDA_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS}
@@ -108,22 +108,27 @@ target_link_libraries(trt_infer PRIVATE
 
 
 # ═════════════════════════════════════════════════════════════════════════════
-# YOLO targets
+# YOLO TRT targets
 # ═════════════════════════════════════════════════════════════════════════════
-foreach(tgt yolo_det yolo_seg)
-    add_executable(${tgt} yolo/${tgt}.cpp)
-    target_include_directories(${tgt} PRIVATE
-        ${TRT_INCLUDE_DIR} ${CUDA_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS})
-    target_compile_options(${tgt} PRIVATE -O2 -Wall -Wno-deprecated-declarations)
-    target_link_libraries(${tgt} PRIVATE
-        ${TRT_LIBRARY} ${CUDA_LIBRARIES} ${OpenCV_LIBS} Threads::Threads)
-endforeach()
-
-add_executable(yoloe_seg yolo/yoloe_seg.cpp)
-target_include_directories(yoloe_seg PRIVATE
+add_executable(yolotrt_det yolo-trt/yolo_det.cpp)
+target_include_directories(yolotrt_det PRIVATE
     ${TRT_INCLUDE_DIR} ${CUDA_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS})
-target_compile_options(yoloe_seg PRIVATE -O2 -Wall -Wno-deprecated-declarations)
-target_link_libraries(yoloe_seg PRIVATE
+target_compile_options(yolotrt_det PRIVATE -O2 -Wall -Wno-deprecated-declarations)
+target_link_libraries(yolotrt_det PRIVATE
+    ${TRT_LIBRARY} ${CUDA_LIBRARIES} ${OpenCV_LIBS} Threads::Threads)
+
+add_executable(yolotrt_seg yolo-trt/yolo_seg.cpp)
+target_include_directories(yolotrt_seg PRIVATE
+    ${TRT_INCLUDE_DIR} ${CUDA_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS})
+target_compile_options(yolotrt_seg PRIVATE -O2 -Wall -Wno-deprecated-declarations)
+target_link_libraries(yolotrt_seg PRIVATE
+    ${TRT_LIBRARY} ${CUDA_LIBRARIES} ${OpenCV_LIBS} Threads::Threads)
+
+add_executable(yoloetrt_seg yolo-trt/yoloe_seg.cpp)
+target_include_directories(yoloetrt_seg PRIVATE
+    ${TRT_INCLUDE_DIR} ${CUDA_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS})
+target_compile_options(yoloetrt_seg PRIVATE -O2 -Wall -Wno-deprecated-declarations)
+target_link_libraries(yoloetrt_seg PRIVATE
     ${TRT_LIBRARY} ${CUDA_LIBRARIES} ${OpenCV_LIBS} ${CUBLAS_LIBRARY} Threads::Threads)
 
 

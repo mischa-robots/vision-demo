@@ -155,7 +155,7 @@ For production robotics, a common pattern is:
 - **YOLO** seeded with bounding boxes from detected objects, with additional
   tracking points placed inside those boxes
 
-See `yolo/` for the object detection and segmentation demos that complete this
+See `yolo-trt/` for the object detection and segmentation demos that complete this
 pipeline.
 
 ### Why does a robot need optical flow?
@@ -397,11 +397,11 @@ robot pipeline the relevant outputs are:
   when they lack strong corners.
 
 For depth and obstacle avoidance see `vpi-stereo-depth/`.
-For object detection and segmentation see `yolo/`.
+For object detection and segmentation see `yolo-trt/`.
 
 
 ## License
 
 MIT
 
-Copyright (c) 2026 Mischa Schaefer <https://github.com/mischa-robots/vision-demo>
+Copyright (c) 2026 Michael Schaefer <https://github.com/mischa-robots/vision-demo>
