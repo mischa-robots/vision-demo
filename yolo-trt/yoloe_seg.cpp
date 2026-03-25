@@ -25,12 +25,8 @@
  *   RTSP  (VLC / ffplay)    : rtsp://<jetson-ip>:8554/yolo
  *
  * Usage:
- *   ./build/yoloetrt_seg --model ./yolo-trt/models/yoloe-seg.trt --labels ./yolo-trt/models/yoloe-seg-labels.txt
+ *   ./build/yoloetrt_seg --model ./models/yoloe-seg.trt --labels ./models/yoloe-seg-labels.txt
  *   ./build/yoloetrt_seg --help
- *
- * MIT License
- * Copyright (c) 2026 Mischa (Michael Schaefer)
- * https://github.com/mischa-robots/vision-demo
  */
 
 #include <atomic>
@@ -113,8 +109,8 @@ struct InferResult {
 // Config
 // ════════════════════════════════════════════════════════════════════════════
 struct Config {
-    std::string model_path    = "./yolo-trt/models/yoloe-seg.trt";
-    std::string labels_path   = "./yolo-trt/models/yoloe-seg-labels.txt";
+    std::string model_path    = "./models/yoloe-seg.trt";
+    std::string labels_path   = "./models/yoloe-seg-labels.txt";
     int         width         = 1280;
     int         height        = 720;
     int         fps           = 30;
@@ -381,7 +377,7 @@ static Config parse_args(int argc, char** argv)
             std::cout <<
                 "Usage: ./build/yoloetrt_seg [options]\n"
                 "\n"
-                "  --model        PATH   TRT engine file     (default: ./yolo-trt/models/yoloe-seg.trt)\n"
+                "  --model        PATH   TRT engine file     (default: ./models/yoloe-seg.trt)\n"
                 "  --labels       PATH   Labels file         (required — one class per line)\n"
                 "  --width        INT    Camera width        (default: 1280)\n"
                 "  --height       INT    Camera height       (default: 720)\n"
@@ -392,7 +388,7 @@ static Config parse_args(int argc, char** argv)
                 "  --mask-thresh  FLOAT  Mask binary thr     (default: 0.5)\n"
                 "  --mask-alpha   FLOAT  Overlay opacity     (default: 0.4)\n"
                 "  --udp-host     STR    MediaMTX UDP host   (default: 127.0.0.1)\n"
-                "  --udp-port     INT    MediaMTX UDP port   (default: 5604)\n"
+                "  --udp-port     INT    MediaMTX UDP port   (default: 5602)\n"
                 "  --bitrate      INT    Encoder bps         (default: 4000000)\n"
                 "  --h264-profile INT    H.264 profile       (default: 2=Main)\n"
                 "                         0=Baseline 2=Main 4=High\n"
@@ -409,7 +405,7 @@ static Config parse_args(int argc, char** argv)
     // --labels is required for YOLOE (no fixed class list)
     if (cfg.labels_path.empty()) {
         std::cerr << "[ERROR] --labels <file> is required for yoloetrt_seg.\n"
-                  << "        Example: --labels ./yolo-trt/models/yoloe-seg-labels.txt\n";
+                  << "        Example: --labels ./models/yoloe-seg-labels.txt\n";
         std::exit(1);
     }
 

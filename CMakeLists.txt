@@ -108,6 +108,30 @@ target_link_libraries(trt_infer PRIVATE
 
 
 # ═════════════════════════════════════════════════════════════════════════════
+# YOLO DNN targets
+# ═════════════════════════════════════════════════════════════════════════════
+add_executable(yolodnn_det yolo-dnn/yolo_det.cpp)
+target_include_directories(yolodnn_det PRIVATE
+    ${OpenCV_INCLUDE_DIRS})
+target_compile_options(yolodnn_det PRIVATE -O2 -Wall -Wno-deprecated-declarations)
+target_link_libraries(yolodnn_det PRIVATE
+    ${OpenCV_LIBS} Threads::Threads)
+
+add_executable(yolodnn_seg yolo-dnn/yolo_seg.cpp)
+target_include_directories(yolodnn_seg PRIVATE
+    ${OpenCV_INCLUDE_DIRS})
+target_compile_options(yolodnn_seg PRIVATE -O2 -Wall -Wno-deprecated-declarations)
+target_link_libraries(yolodnn_seg PRIVATE
+    ${OpenCV_LIBS} Threads::Threads)
+
+add_executable(yoloednn_seg yolo-dnn/yoloe_seg.cpp)
+target_include_directories(yoloednn_seg PRIVATE
+    ${OpenCV_INCLUDE_DIRS})
+target_compile_options(yoloednn_seg PRIVATE -O2 -Wall -Wno-deprecated-declarations)
+target_link_libraries(yoloednn_seg PRIVATE
+    ${OpenCV_LIBS} ${CUBLAS_LIBRARY} Threads::Threads)
+
+# ═════════════════════════════════════════════════════════════════════════════
 # YOLO TRT targets
 # ═════════════════════════════════════════════════════════════════════════════
 add_executable(yolotrt_det yolo-trt/yolo_det.cpp)

@@ -17,7 +17,7 @@
  *   RTSP  (VLC / ffplay)    : rtsp://<jetson-ip>:8554/yolo
  *
  * Usage:
- *   ./build/yolotrt_seg --model ./yolo-trt/models/yolo-seg.trt --labels ./yolo-trt/models/yolo-seg-labels.txt
+ *   ./build/yolotrt_seg --model ./models/yolo-seg.trt --labels ./models/yolo-seg-labels.txt
  *   ./build/yolotrt_seg --help
  */
 
@@ -97,8 +97,8 @@ struct InferResult {
 // Config
 // ════════════════════════════════════════════════════════════════════════════
 struct Config {
-    std::string model_path    = "./yolo-trt/models/yolo-seg.trt";
-    std::string labels_path   = "./yolo-trt/models/yolo-seg-labels.txt";
+    std::string model_path    = "./models/yolo-seg.trt";
+    std::string labels_path   = "./models/yolo-seg-labels.txt";
     int         width         = 1280;
     int         height        = 720;
     int         fps           = 30;
@@ -353,8 +353,8 @@ static Config parse_args(int argc, char** argv)
             std::cout <<
                 "Usage: ./build/yolotrt_seg [options]\n"
                 "\n"
-                "  --model          PATH   TRT engine file       (default: ./yolo-trt/models/yolo-seg.trt)\n"
-                "  --labels         PATH   Labels file           (default: ./yolo-trt/models/yolo-seg-labels.txt)\n"
+                "  --model          PATH   TRT engine file       (default: ./models/yolo-seg.trt)\n"
+                "  --labels         PATH   Labels file           (default: ./models/yolo-seg-labels.txt)\n"
                 "  --width          INT    Camera width          (default: 1280)\n"
                 "  --height         INT    Camera height         (default: 720)\n"
                 "  --fps            INT    Camera FPS            (default: 30)\n"

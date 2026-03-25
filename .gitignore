@@ -8,9 +8,12 @@ cmake_install.cmake
 install_manifest.txt
 compile_commands.json
 
-# Models — download and convert locally, see yolo-trt/README.md
-yolo-trt/models/*
-!yolo-trt/models/.gitkeep
+# YOLO Models — download and convert locally, see models/README.md
+models/*
+!models/README.md
+!models/export_yolo.py
+!models/yolo-labels.txt
+!models/yoloe-seg-labels.txt
 
 # Calibration output — generated per camera pair, see vpi-stereo-depth/README.md
 vpi-stereo-depth/calibration/captures/

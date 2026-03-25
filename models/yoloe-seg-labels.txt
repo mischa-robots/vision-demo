@@ -1,0 +1,205 @@
+person
+baby
+toddler
+child
+adult
+woman
+man
+boy
+girl
+teenager
+wheelchair
+crutch
+baby carriage
+bicycle
+tricycle
+balance car
+scooter
+skateboard
+vespa
+robot
+dog
+cat
+rabbit
+bird
+fish
+turtle
+rat
+armchair
+chair
+swivel chair
+bean bag chair
+daybed
+stool
+bar stool
+bench
+couch
+bed
+bunk bed
+canopy bed
+changing table
+mattress
+pillow
+throw pillow
+blanket
+bedding
+bedcover
+table
+coffee machine
+computer desk
+office desk
+workbench
+shelf
+bookshelf
+bookcase
+armoire
+cabinet
+bathroom cabinet
+tv cabinet
+dresser
+chest
+nightstand
+bureau
+vanity
+storage box
+box
+cardboard box
+basket
+bin
+laundry basket
+waste container
+fridge
+oven
+microwave
+toaster
+blender
+washer
+vacuum
+air conditioner
+air conditioning
+fan
+ceiling fan
+heater
+water heater
+bath heater
+stove
+lamp
+chandelier
+television
+monitor
+desktop computer
+laptop
+tablet computer
+keyboard
+mouse
+remote
+speaker
+printer
+router
+smartphone
+charger
+cable
+door
+window
+window sill
+window seat
+stairs
+stair
+step stool
+ladder
+balustrade
+curtain
+blind
+carpet
+floor mat
+bath mat
+yoga mat
+mirror
+bathroom mirror
+wall clock
+alarm clock
+clock
+book
+magazine
+backpack
+bag
+handbag
+luggage
+briefcase
+tote bag
+umbrella
+coatrack
+shoe
+boot
+slipper
+jacket
+coat
+helmet
+glasses
+bottle
+cup
+mug
+bowl
+plate
+tray
+fork
+knife
+spoon
+pot
+pan
+cutting board
+soap dispenser
+toothbrush
+toothpaste
+toilet bowl
+toilet seat
+toilet paper
+bathroom sink
+sink
+bath
+tub
+shower
+bath towel
+towel
+soap
+fire alarm
+smoke
+webcam
+tripod
+toolbox
+hammer
+screwdriver
+wrench
+drill
+broom
+dustpan
+ironing board
+iron
+sewing machine
+piano
+guitar
+drum
+violin
+amplifier
+microphone
+earphone
+toy
+stuffed animal
+board game
+dumbbell
+barbell
+treadmill
+stationary bicycle
+training bench
+plant
+vase
+aquarium
+candle
+candle holder
+humidifier
+cat tree
+cat bed
+cat food
+chopstick
+floor
+laundry
