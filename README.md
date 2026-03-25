@@ -332,6 +332,36 @@ vision-demo/
 
 ---
 
+## References
+
+### Optical Flow
+
+**NVidia VPI 1.2 Optical Flow with Pyr LK**
+
+https://docs.nvidia.com/vpi/1.2/sample_optflow_lk.html
+
+**OpenCV 4.8 Optical Flow (different algorithms)**
+
+https://docs.opencv.org/4.8.0/d7/d3f/group__cudaoptflow.html
+
+### Stereo Depth
+
+**NVidia VPI 1.2 Stereo Disparity**
+
+https://docs.nvidia.com/vpi/1.2/sample_stereo.html
+
+**OpenCV 4.8 Stereo Correspondence (different algorithms)**
+
+https://docs.opencv.org/4.8.0/dd/d47/group__cudastereo.html
+
+### YOLO (Ultralytics)
+
+https://docs.ultralytics.com
+
+https://docs.ultralytics.com/models/yolo26/
+
+https://docs.ultralytics.com/models/yoloe/
+
 ## Known Issues & Hardware Limitations
 
 | Issue | Affected | Workaround |
