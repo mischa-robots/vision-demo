@@ -38,6 +38,7 @@ Each demo pushes to a dedicated UDP port when running. MediaMTX exposes all of t
 |------|--------|-----|------|
 | Stereo Depth | `http://<jetson-ip>:8889/stereo_depth` | `http://<jetson-ip>:8888/stereo_depth` | `rtsp://<jetson-ip>:8554/stereo_depth` |
 | Optical Flow | `http://<jetson-ip>:8889/optical_flow` | `http://<jetson-ip>:8888/optical_flow` | `rtsp://<jetson-ip>:8554/optical_flow` |
+| Background Subtraction | `http://<jetson-ip>:8889/bg_subtraction` | `http://<jetson-ip>:8888/bg_subtraction` | `rtsp://<jetson-ip>:8554/bg_subtraction` |
 | YOLO Detection | `http://<jetson-ip>:8889/yolo` | `http://<jetson-ip>:8888/yolo` | `rtsp://<jetson-ip>:8554/yolo` |
 
 **WebRTC** gives the lowest latency and works directly in Chrome and Firefox — recommended for live demos.

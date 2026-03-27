@@ -246,3 +246,25 @@ add_executable(cvcuda_dual_tvl1 optical-flow/cvcuda_dual_tvl1_optical_flow.cpp)
 target_include_directories(cvcuda_dual_tvl1 PRIVATE ${CVCUDA_OF_INCLUDE_DIRS})
 target_compile_options(cvcuda_dual_tvl1     PRIVATE ${CVCUDA_OF_COMPILE_OPTS})
 target_link_libraries(cvcuda_dual_tvl1      PRIVATE ${CVCUDA_OF_LINK_LIBS})
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# Background subtractor demos
+# ═════════════════════════════════════════════════════════════════════════════
+
+add_executable(vpi_bgsubtract background-subtraction/vpi_bg_subtractor.cpp)
+target_include_directories(vpi_bgsubtract PRIVATE ${VPI_INCLUDE_DIRS})
+target_compile_options(vpi_bgsubtract     PRIVATE ${VPI_COMPILE_OPTS})
+target_link_libraries(vpi_bgsubtract      PRIVATE ${VPI_LINK_LIBS})
+
+add_executable(cvcuda_bgsubtract background-subtraction/cvcuda_bg_subtractor.cpp)
+target_include_directories(cvcuda_bgsubtract PRIVATE
+    ${OpenCV_INCLUDE_DIRS} ${GST_INCLUDE_DIRS} ${GSTAPP_INCLUDE_DIRS})
+target_compile_options(cvcuda_bgsubtract     PRIVATE
+    ${GST_CFLAGS_LIST} ${GSTAPP_CFLAGS_LIST} -O2 -Wall -Wextra)
+target_link_libraries(cvcuda_bgsubtract      PRIVATE
+    ${OpenCV_LIBS}
+    opencv_cudabgsegm
+    opencv_cudaimgproc
+    ${GST_LIBRARIES} ${GSTAPP_LIBRARIES}
+    Threads::Threads)

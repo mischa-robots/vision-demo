@@ -1,8 +1,9 @@
 # Vision Demo
 
 Computer Vision demos for the **Jetson Nano** — stereo depth perception,
-optical flow, and YOLO object detection and segmentation — streaming results live
-to a browser via MediaMTX. No desktop required, runs fully headless.
+optical flow, background subtraction, and YOLO object detection and segmentation
+— streaming results live to a browser via MediaMTX. No desktop required, runs
+fully headless.
 
 All demos share a single build step and a single MediaMTX instance. Results
 are accessible from any browser on the same network.
@@ -60,6 +61,22 @@ Video Stream: `http://<jetson-ip>:8889/optical_flow`
 
 See [optical-flow/README.md](optical-flow/README.md) for details.
 
+### Background Subtraction
+
+Single CSI camera → background model → foreground mask →
+side-by-side original + COLORMAP_TURBO mask → streamed to browser.
+Both binaries stream to the same path so you can compare algorithms
+without changing the browser URL.
+
+| Binary | Algorithm | Nano FPS | Notes |
+|---|---|---|---|
+| `vpi_bg_subtractor` | VPI BackgroundSubtractor (CUDA) | ~ 14 fps | VPI native implementation. |
+| `cvcuda_bg_subtractor` | OpenCV CUDA MOG2 | ~ 15 fps | Gaussian mixture model. Recommended. |
+
+Video Stream: `http://<jetson-ip>:8889/bg_subtraction`
+
+See [bg-subtraction/README.md](bg-subtraction/README.md) for details.
+
 ### YOLO DNN
 
 Single CSI or USB camera → OpenCV DNN inference (ONNX) → detection/segmentation overlay → streamed to browser. No TensorRT conversion required.
@@ -101,7 +118,7 @@ due to simultaneous rendering of the results into the video stream.
 **Hardware**
 - Jetson Nano B01 (4 GB recommended)
 - Two CSI cameras (e.g. IMX219) for stereo depth demos
-- Single CSI or USB camera for optical flow and YOLO demos
+- Single CSI or USB camera for optical flow, background subtraction, and YOLO demos
 - USB stick or fast SD card for TensorRT model files
 
 **Software**
@@ -116,8 +133,8 @@ due to simultaneous rendering of the results into the video stream.
 - Python 3.10 (for Python demos and stereo calibration)
 
 OpenCV must be built from source with `-DWITH_CUDA=ON`, `-DWITH_GSTREAMER=ON`,
-and the `cudaoptflow`, `cudafeatures2d`, `cudastereo`, and `cudawarping` contrib
-modules enabled. The system OpenCV package is not sufficient.
+and the `cudaoptflow`, `cudafeatures2d`, `cudastereo`, `cudawarping`, and
+`cudabgsegm` contrib modules enabled. The system OpenCV package is not sufficient.
 
 *HINT:* You can also use my [Jetson Nano Ubuntu 22.04](https://github.com/mischa-robots/jetson-nano-ubuntu22) image that comes with OpenCV + CUDA precompiled.
 
@@ -190,6 +207,13 @@ See [stereo-depth/README.md](stereo-depth/README.md) for all Stereo Depth demos.
 
 See [optical-flow/README.md](optical-flow/README.md) for all Optical Flow demos.
 
+**Background subtraction:**
+```bash
+./build/cvcuda_bg_subtractor
+```
+
+See [bg-subtraction/README.md](bg-subtraction/README.md) for all Background Subtraction demos.
+
 **YOLO DNN detection:**
 ```bash
 ./build/yolodnn_det --model ./models/yolo.onnx --labels ./models/yolo-labels.txt
@@ -219,6 +243,7 @@ Run any binary with `--help` to see all available options.
 ```
 http://<jetson-ip>:8889/stereo_depth
 http://<jetson-ip>:8889/optical_flow
+http://<jetson-ip>:8889/bg_subtraction
 http://<jetson-ip>:8889/yolo
 ```
 
@@ -243,6 +268,10 @@ CSI cameras
   │     cvcuda_sparse_pyrlk, cvcuda_farneback  │
   │     cvcuda_dense_pyrlk, cvcuda_brox        │
   │     cvcuda_dual_tvl1, vpi_optical_flow     │
+  │                                            │
+  ├─► bg-subtraction/ ─────────────────────────┤
+  │     background model → foreground mask     │
+  │     vpi_bg_subtractor, cvcuda_bg_subtractor│
   │                                            │
   ├─► yolo-dnn/ ───────────────────────────────┤
   │     OpenCV DNN inference → overlay         │
@@ -305,6 +334,11 @@ vision-demo/
 │   ├── cv_optical_flow_cuda.py
 │   └── README.md
 │
+├── bg-subtraction/                 # Background subtraction demos
+│   ├── vpi_bg_subtractor.cpp       # VPI CUDA BackgroundSubtractor
+│   ├── cvcuda_bg_subtractor.cpp    # OpenCV CUDA MOG2 — recommended
+│   └── README.md
+│
 ├── yolo-dnn/                       # YOLO with OpenCV DNN (ONNX)
 │   ├── yolo_det.cpp                # binary: yolodnn_det
 │   ├── yolo_seg.cpp                # binary: yolodnn_seg
@@ -343,6 +377,16 @@ https://docs.nvidia.com/vpi/1.2/sample_optflow_lk.html
 **OpenCV 4.8 Optical Flow (different algorithms)**
 
 https://docs.opencv.org/4.8.0/d7/d3f/group__cudaoptflow.html
+
+### Background Subtraction
+
+**NVidia VPI 1.2 Background Subtractor**
+
+https://docs.nvidia.com/vpi/1.2/sample_background_subtractor.html
+
+**OpenCV 4.8 CUDA Background Segmentation**
+
+https://docs.opencv.org/4.8.0/d6/d17/group__cudabgsegm.html
 
 ### Stereo Depth
 
