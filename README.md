@@ -70,12 +70,28 @@ without changing the browser URL.
 
 | Binary | Algorithm | Nano FPS | Notes |
 |---|---|---|---|
-| `vpi_bg_subtractor` | VPI BackgroundSubtractor (CUDA) | ~ 14 fps | VPI native implementation. |
-| `cvcuda_bg_subtractor` | OpenCV CUDA MOG2 | ~ 15 fps | Gaussian mixture model. Recommended. |
+| `vpi_bg_subtractor` | VPI BackgroundSubtractor (CUDA) | x fps | VPI native implementation. |
+| `cvcuda_bg_subtractor` | OpenCV CUDA MOG2 | x fps | Gaussian mixture model. Recommended. |
 
 Video Stream: `http://<jetson-ip>:8889/bg_subtraction`
 
 See [bg-subtraction/README.md](bg-subtraction/README.md) for details.
+
+### Face Landmark Detection
+
+Single CSI camera → Haar cascade / YuNet DNN face detection → FacemarkLBF 68-point
+landmark fitting → side-by-side original + annotated overlay → streamed to browser.
+
+| Binary | Algorithm | Nano FPS | Notes |
+|---|---|---|---|
+| `cv_face` | Haar cascade + FacemarkLBF | x fps | CPU-only. Requires `lbfmodel.yaml` (see below). |
+| `cv_face_yn` | YuNet DNN + FacemarkLBF | x fps | CPU-only. Requires `lbfmodel.yaml` (see below). |
+
+Video Stream: `http://<jetson-ip>:8889/face`
+
+> **Model required:** download the models before running the programs.
+
+See [face/README.md](face/README.md) for details.
 
 ### YOLO DNN
 
@@ -88,6 +104,8 @@ Single CSI or USB camera → OpenCV DNN inference (ONNX) → detection/segmentat
 | `yoloednn_seg` | Instance segmentation with YOLOE-seg ONNX model | - | - |
 
 Video Stream: `http://<jetson-ip>:8889/yolo`
+
+> **Model required:** download the models before running the programs.
 
 See [yolo-dnn/README.md](yolo-dnn/README.md) for details.
 
@@ -102,6 +120,8 @@ Single CSI or USB camera → TensorRT inference → detection/segmentation overl
 | `yoloetrt_seg` | Instance segmentation with YOLOE-seg TensorRT engine | - | - |
 
 Video Stream: `http://<jetson-ip>:8889/yolo`
+
+> **Model required:** download the models before running the programs.
 
 See [yolo-trt/README.md](yolo-trt/README.md) for details.
 
@@ -133,8 +153,8 @@ due to simultaneous rendering of the results into the video stream.
 - Python 3.10 (for Python demos and stereo calibration)
 
 OpenCV must be built from source with `-DWITH_CUDA=ON`, `-DWITH_GSTREAMER=ON`,
-and the `cudaoptflow`, `cudafeatures2d`, `cudastereo`, `cudawarping`, and
-`cudabgsegm` contrib modules enabled. The system OpenCV package is not sufficient.
+and the `cudaoptflow`, `cudafeatures2d`, `cudastereo`, `cudawarping`,
+`cudabgsegm`, and `face` contrib modules enabled. The system OpenCV package is not sufficient.
 
 *HINT:* You can also use my [Jetson Nano Ubuntu 22.04](https://github.com/mischa-robots/jetson-nano-ubuntu22) image that comes with OpenCV + CUDA precompiled.
 
@@ -214,6 +234,13 @@ See [optical-flow/README.md](optical-flow/README.md) for all Optical Flow demos.
 
 See [bg-subtraction/README.md](bg-subtraction/README.md) for all Background Subtraction demos.
 
+**Face landmark detection:**
+```bash
+./build/cv_face --model ./models/lbfmodel.yaml
+```
+
+See [face/README.md](face/README.md) for details and model download instructions.
+
 **YOLO DNN detection:**
 ```bash
 ./build/yolodnn_det --model ./models/yolo.onnx --labels ./models/yolo-labels.txt
@@ -244,6 +271,7 @@ Run any binary with `--help` to see all available options.
 http://<jetson-ip>:8889/stereo_depth
 http://<jetson-ip>:8889/optical_flow
 http://<jetson-ip>:8889/bg_subtraction
+http://<jetson-ip>:8889/face
 http://<jetson-ip>:8889/yolo
 ```
 
@@ -272,6 +300,10 @@ CSI cameras
   ├─► bg-subtraction/ ─────────────────────────┤
   │     background model → foreground mask     │
   │     vpi_bg_subtractor, cvcuda_bg_subtractor│
+  │                                            │
+  ├─► face/ ───────────────────────────────────┤
+  │     Haar / YN → FacemarkLBF 68-point       │
+  │     cv_face, cv_face_yn                    │
   │                                            │
   ├─► yolo-dnn/ ───────────────────────────────┤
   │     OpenCV DNN inference → overlay         │
@@ -339,6 +371,11 @@ vision-demo/
 │   ├── cvcuda_bg_subtractor.cpp    # OpenCV CUDA MOG2 — recommended
 │   └── README.md
 │
+├── face/                           # Face landmark detection demos
+│   ├── cv_face_landmarks.cpp       # Haar cascade + FacemarkLBF 68-point  → binary: cv_face
+│   ├── cv_face_landmarks_yn.cpp    # YuNet DNN + FacemarkLBF 68-point     → binary: cv_face_yn
+│   └── README.md
+│
 ├── yolo-dnn/                       # YOLO with OpenCV DNN (ONNX)
 │   ├── yolo_det.cpp                # binary: yolodnn_det
 │   ├── yolo_seg.cpp                # binary: yolodnn_seg
@@ -377,6 +414,20 @@ https://docs.nvidia.com/vpi/1.2/sample_optflow_lk.html
 **OpenCV 4.8 Optical Flow (different algorithms)**
 
 https://docs.opencv.org/4.8.0/d7/d3f/group__cudaoptflow.html
+
+### Face Landmark Detection
+
+**OpenCV FacemarkLBF tutorial**
+
+https://docs.opencv.org/4.x/d2/d42/tutorial_face_landmark_detection_in_an_image.html
+
+**Original LBF model (GSOC 2017)**
+
+https://github.com/kurnianggoro/GSOC2017
+
+**OpenCV 4.8 face module API**
+
+https://docs.opencv.org/4.8.0/d3/dd0/classcv_1_1face_1_1Facemark.html
 
 ### Background Subtraction
 

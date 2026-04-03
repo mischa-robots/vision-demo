@@ -268,3 +268,28 @@ target_link_libraries(cvcuda_bgsubtract      PRIVATE
     opencv_cudaimgproc
     ${GST_LIBRARIES} ${GSTAPP_LIBRARIES}
     Threads::Threads)
+
+# ═════════════════════════════════════════════════════════════════════════════
+# Face landmark detection demos
+# ═════════════════════════════════════════════════════════════════════════════
+add_executable(cv_face face/cv_face_landmarks.cpp)
+target_include_directories(cv_face PRIVATE
+    ${OpenCV_INCLUDE_DIRS} ${GST_INCLUDE_DIRS} ${GSTAPP_INCLUDE_DIRS})
+target_compile_options(cv_face     PRIVATE
+    ${GST_CFLAGS_LIST} ${GSTAPP_CFLAGS_LIST} -O2 -Wall -Wextra)
+target_link_libraries(cv_face      PRIVATE
+    ${OpenCV_LIBS}
+    opencv_face
+    ${GST_LIBRARIES} ${GSTAPP_LIBRARIES}
+    Threads::Threads)
+
+add_executable(cv_face_yn face/cv_face_landmarks_yn.cpp)
+target_include_directories(cv_face_yn PRIVATE
+    ${OpenCV_INCLUDE_DIRS} ${GST_INCLUDE_DIRS} ${GSTAPP_INCLUDE_DIRS})
+target_compile_options(cv_face_yn     PRIVATE
+    ${GST_CFLAGS_LIST} ${GSTAPP_CFLAGS_LIST} -O2 -Wall -Wextra)
+target_link_libraries(cv_face_yn      PRIVATE
+    ${OpenCV_LIBS}
+    opencv_face
+    ${GST_LIBRARIES} ${GSTAPP_LIBRARIES}
+    Threads::Threads)
