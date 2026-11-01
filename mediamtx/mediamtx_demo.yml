@@ -36,15 +36,17 @@ hlsSegmentDuration: 1s
 hlsPartDuration: 200ms
 hlsAllowOrigins: ['*']
 
-# IMPORTANT: advertise the Jetson's actual LAN IP as a WebRTC HOST ICE candidate.
+# IMPORTANT:
+# Replace `<jetson-ip>` with the current IP.
+# To find out the current IP, run "ip a" command in terminal.
+# Note: advertise the Jetson's actual LAN IP as a WebRTC HOST ICE candidate.
 #  -> webrtcAdditionalHosts: [IP]
 # Without this, MediaMTX only advertises 127.0.0.1 and the browser has to
 # discover the real IP via peer-reflexive (prflx) fallback -- causing a streaming delay.
-# To find out the IP, run "ip a" command in terminal
 webrtc: true
-webrtcAddress: 10.42.0.149:8889
-webrtcLocalUDPAddress: 10.42.0.149:8189
-webrtcAdditionalHosts: [10.42.0.149]
+webrtcAddress: <jetson-ip>:8889
+webrtcLocalUDPAddress: <jetson-ip>:8189
+webrtcAdditionalHosts: [<jetson-ip>]
 webrtcIPsFromInterfaces: false
 webrtcAllowOrigins: ['*']
 
